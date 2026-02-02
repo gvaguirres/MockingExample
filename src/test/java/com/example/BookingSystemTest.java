@@ -179,7 +179,7 @@ public class BookingSystemTest {
         Room room1 = new Room("101", "Room1");
         Room room2 = new Room("102", "Room2");
 
-        Mockito.when(roomRepository.findAll()).thenReturn(List.of(room1, room1));
+        Mockito.when(roomRepository.findAll()).thenReturn(List.of(room1, room2));
         List<Room> result = bookingSystem.getAvailableRooms(startTime, endTime);
 
         assertThat(result).hasSize(2);
@@ -189,8 +189,46 @@ public class BookingSystemTest {
     @Test
     void cancelBookingThrowsExceptionWhenBookingIdIsNull() {
 
+        var exception = assertThrows(IllegalArgumentException.class,
+                () -> bookingSystem.cancelBooking(null));
+
+        assertThat(exception).hasMessage("Boknings-id kan inte vara null");
     }
 
+    @Test
+    void cancelBooking(){
 
+        LocalDateTime currentTime = LocalDateTime.now();
+        LocalDateTime startTime = currentTime.plusDays(3);
+        LocalDateTime endTime = currentTime.plusDays(5);
+        Booking booking = new Booking("1", "100", startTime, endTime);
+        Room room = new Room("100", "Room1");
+
+        room.addBooking(booking);
+        Mockito.when(timeProvider.getCurrentTime()).thenReturn(currentTime);
+        Mockito.when(roomRepository.findAll()).thenReturn(List.of(room));
+        boolean result = bookingSystem.cancelBooking("1");
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    void cancelBookingThrowsExceptionWhenStartTimeIsBeforeCurrentTime(){
+
+        LocalDateTime currentTime = LocalDateTime.now();
+        LocalDateTime startTime = currentTime.minusDays(3);
+        LocalDateTime endTime = currentTime.plusDays(5);
+        Booking booking = new Booking("1", "100", startTime, endTime);
+        Room room = new Room("100", "Room1");
+
+        room.addBooking(booking);
+        Mockito.when(timeProvider.getCurrentTime()).thenReturn(currentTime);
+        Mockito.when(roomRepository.findAll()).thenReturn(List.of(room));
+
+        var exception = assertThrows(IllegalStateException.class,
+                () -> bookingSystem.cancelBooking("1"));
+
+        assertThat(exception).hasMessage("Kan inte avboka påbörjad eller avslutad bokning");
+    }
 
 }
