@@ -1,5 +1,6 @@
 package com.example;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -15,7 +16,6 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,6 +38,7 @@ class BookingSystemTest {
 
     @ParameterizedTest
     @MethodSource("provideNullScenariosForRoomIdStartAndEndTime")
+    @DisplayName("Should throw IllegalArgumentException if room ID, start time, or end time is null")
     void throwsExceptionWhenRoomIdStartTimeOrEndTimeIsNull(String roomId, LocalDateTime startTime, LocalDateTime endTime) {
 
         var exception = assertThrows(IllegalArgumentException.class,
@@ -55,6 +56,7 @@ class BookingSystemTest {
     }
 
     @Test
+    @DisplayName("Should throw IllegalArgumentException if the room ID provided does not exist in the repository")
     void throwsExceptionWhenRoomDoesNotExist() {
 
         Room room = new Room("100", "Room1");
@@ -68,10 +70,10 @@ class BookingSystemTest {
         var exception = assertThrows(IllegalArgumentException.class,
                 () -> bookingSystem.bookRoom(room.getId(), startTime, endTime));
         assertThat(exception).hasMessage("Rummet existerar inte");
-
     }
 
     @Test
+    @DisplayName("Should throw IllegalArgumentException when attempting to book a room in the past")
     void throwsExceptionWhenStartTimeIsBeforeCurrentDate(){
 
         LocalDateTime currentTime = LocalDateTime.now();
@@ -87,6 +89,7 @@ class BookingSystemTest {
     }
 
     @Test
+    @DisplayName("Should throw IllegalArgumentException if the booking end time is before the start time")
     void throwsExceptionWhenEndTimeIsBeforeStartTime(){
 
         LocalDateTime currentTime = LocalDateTime.now();
@@ -99,10 +102,10 @@ class BookingSystemTest {
         var exception = assertThrows(IllegalArgumentException.class,
                 () -> bookingSystem.bookRoom(roomId, startTime, endTime));
         assertThat(exception).hasMessage("Sluttid måste vara efter starttid");
-
     }
 
     @Test
+    @DisplayName("Should successfully book a room, save it to the repository, and send a confirmation when the room is available")
     void bookRoomIfRoomIsAvailable() throws NotificationException {
 
         Room room = new Room("100", "Room1");
@@ -124,6 +127,7 @@ class BookingSystemTest {
     }
 
     @Test
+    @DisplayName("Should return false and not save to repository if the room is already occupied during the requested time")
     void notBookRoomIfRoomIsNotAvailable() {
 
         Room room = new Room("100", "Room1");
@@ -141,11 +145,11 @@ class BookingSystemTest {
         assertThat(result).isFalse();
 
         verify(roomRepository, Mockito.never()).save(room);
-
     }
 
     @ParameterizedTest
     @MethodSource("provideNullScenarios")
+    @DisplayName("Should throw IllegalArgumentException when searching for available rooms with null dates")
     void getAvailableRoomsThrowsExceptionWhenStartOrEndTimeIsNull(LocalDateTime startTime, LocalDateTime endTime) {
 
         var exception = assertThrows(IllegalArgumentException.class,
@@ -162,6 +166,7 @@ class BookingSystemTest {
     }
 
     @Test
+    @DisplayName("Should throw IllegalArgumentException if the end time is before the start time during availability search")
     void getAvailableRoomsThrowsExceptionWhenEndTimeIsBeforeStartTime() {
 
             LocalDateTime currentTime = LocalDateTime.now();
@@ -174,6 +179,7 @@ class BookingSystemTest {
     }
 
     @Test
+    @DisplayName("Should return a list of all rooms that do not have overlapping bookings for the given period")
     void getAvailableRoomsReturnsAListOfAvailableRooms() {
 
         LocalDateTime currentTime = LocalDateTime.now();
@@ -186,11 +192,10 @@ class BookingSystemTest {
         List<Room> result = bookingSystem.getAvailableRooms(startTime, endTime);
 
         assertThat(result).hasSize(2);
-
-
     }
 
     @Test
+    @DisplayName("Should throw IllegalArgumentException if the booking ID to cancel is null")
     void cancelBookingThrowsExceptionWhenBookingIdIsNull() {
 
         var exception = assertThrows(IllegalArgumentException.class,
@@ -200,6 +205,7 @@ class BookingSystemTest {
     }
 
     @Test
+    @DisplayName("Should successfully cancel a booking, update the correct room, and send a cancellation notification")
     void cancelBooking() throws NotificationException {
 
         LocalDateTime currentTime = LocalDateTime.now();
@@ -225,10 +231,10 @@ class BookingSystemTest {
         assertThat(room2.hasBooking("2")).isTrue();
 
         verify(roomRepository).save(room1);
-
     }
 
     @Test
+    @DisplayName("Should throw IllegalStateException when trying to cancel a booking that has already started or finished")
     void cancelBookingThrowsExceptionWhenStartTimeIsBeforeCurrentTime(){
 
         LocalDateTime currentTime = LocalDateTime.now();
@@ -248,6 +254,7 @@ class BookingSystemTest {
     }
 
     @Test
+    @DisplayName("Should return false when attempting to cancel a booking ID that is not found in any room")
     void cancelBookingShouldReturnFalseIfBookingDoesNotExist() {
         Room room = new Room("100", "Room1");
 
