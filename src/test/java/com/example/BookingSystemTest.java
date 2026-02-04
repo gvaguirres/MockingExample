@@ -5,9 +5,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
@@ -17,9 +15,11 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-public class BookingSystemTest {
+class BookingSystemTest {
 
     @Mock
     TimeProvider timeProvider;
@@ -32,6 +32,9 @@ public class BookingSystemTest {
 
     @InjectMocks
     BookingSystem bookingSystem;
+
+    @Captor
+    ArgumentCaptor<Booking> bookingCaptor;
 
     @ParameterizedTest
     @MethodSource("provideNullScenariosForRoomIdStartAndEndTime")
@@ -100,7 +103,7 @@ public class BookingSystemTest {
     }
 
     @Test
-    void bookRoomIfRoomIsAvailable() {
+    void bookRoomIfRoomIsAvailable() throws NotificationException {
 
         Room room = new Room("100", "Room1");
         LocalDateTime currentTime = LocalDateTime.now();
@@ -110,11 +113,14 @@ public class BookingSystemTest {
         Mockito.when(timeProvider.getCurrentTime()).thenReturn(currentTime);
         Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
 
-        boolean result = bookingSystem.bookRoom(room.getId(), startTime, endTime);
+        var result = bookingSystem.bookRoom(room.getId(), startTime, endTime);
 
+        verify(notificationService).sendBookingConfirmation(bookingCaptor.capture());
+        Booking bookingCaptorValue = bookingCaptor.getValue();
+
+        assertThat(room.hasBooking(bookingCaptorValue.getId())).isTrue();
+        verify(roomRepository).save(room);
         assertThat(result).isTrue();
-
-        Mockito.verify(roomRepository).save(room);
     }
 
     @Test
@@ -134,12 +140,9 @@ public class BookingSystemTest {
 
         assertThat(result).isFalse();
 
-        Mockito.verify(roomRepository, Mockito.never()).save(room);
+        verify(roomRepository, Mockito.never()).save(room);
 
     }
-
-    //Test missing
-    //To check if the notification is sent when a room is booked
 
     @ParameterizedTest
     @MethodSource("provideNullScenarios")
@@ -184,6 +187,7 @@ public class BookingSystemTest {
 
         assertThat(result).hasSize(2);
 
+
     }
 
     @Test
@@ -196,20 +200,32 @@ public class BookingSystemTest {
     }
 
     @Test
-    void cancelBooking(){
+    void cancelBooking() throws NotificationException {
 
         LocalDateTime currentTime = LocalDateTime.now();
         LocalDateTime startTime = currentTime.plusDays(3);
         LocalDateTime endTime = currentTime.plusDays(5);
-        Booking booking = new Booking("1", "100", startTime, endTime);
-        Room room = new Room("100", "Room1");
+        Booking booking1 = new Booking("1", "100", startTime, endTime);
+        Booking booking2 = new Booking("2", "200", startTime, endTime);
+        Room room1 = new Room("100", "Room1");
+        Room room2 = new Room("102", "Room2");
 
-        room.addBooking(booking);
+        room1.addBooking(booking1);
+        room2.addBooking(booking2);
+
         Mockito.when(timeProvider.getCurrentTime()).thenReturn(currentTime);
-        Mockito.when(roomRepository.findAll()).thenReturn(List.of(room));
+        Mockito.when(roomRepository.findAll()).thenReturn(List.of(room1, room2));
+
         boolean result = bookingSystem.cancelBooking("1");
 
+        verify(notificationService).sendCancellationConfirmation(bookingCaptor.capture());
+
         assertThat(result).isTrue();
+        assertThat(room1.hasBooking("1")).isFalse();
+        assertThat(room2.hasBooking("2")).isTrue();
+
+        verify(roomRepository).save(room1);
+
     }
 
     @Test
@@ -229,6 +245,16 @@ public class BookingSystemTest {
                 () -> bookingSystem.cancelBooking("1"));
 
         assertThat(exception).hasMessage("Kan inte avboka påbörjad eller avslutad bokning");
+    }
+
+    @Test
+    void cancelBookingShouldReturnFalseIfBookingDoesNotExist() {
+        Room room = new Room("100", "Room1");
+
+        Mockito.when(roomRepository.findAll()).thenReturn(List.of(room));
+        boolean result = bookingSystem.cancelBooking("999");
+
+        assertThat(result).isFalse();
     }
 
 }
