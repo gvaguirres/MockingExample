@@ -62,4 +62,20 @@ class ShoppingCartTest {
         assertThat(cart.getTotalPrice()).isEqualTo(150);
 
     }
+
+    @Test
+    @DisplayName("Should update the quantity of an item when new item added in the cart is the same as the existing")
+    void manageQuantityUpdate(){
+        ShoppingCart cart = new ShoppingCart();
+        Item item1 = new Item("A1", 100.0, 1);
+        Item item2 = new Item("A1", 100.0, 2);
+
+        cart.addItem(item1);
+        cart.addItem(item2);
+
+        int totalQuantity = cart.getItems().getFirst().getQuantity();
+
+        assertThat(cart.getItems()).hasSize(1);
+        assertThat(totalQuantity).isEqualTo(3);
+    }
 }

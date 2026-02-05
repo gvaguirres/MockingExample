@@ -8,8 +8,18 @@ public class ShoppingCart {
     private List<Item> items =  new ArrayList<>();
     private Discount discount;
 
-    public void addItem(Item item){
-        this.items.add(item);
+    public void addItem(Item newItem){
+
+        for(Item existingItem : items){
+            if (existingItem.getId().equals(newItem.getId())) {
+                int updatedQuantity = existingItem.getQuantity() + newItem.getQuantity();
+                existingItem.setQuantity(updatedQuantity);
+
+                return;
+            }
+        }
+
+        this.items.add(newItem);
     }
     public List<Item> getItems() {
         return items;
