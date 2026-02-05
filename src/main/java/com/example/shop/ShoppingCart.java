@@ -13,6 +13,9 @@ public class ShoppingCart {
     public List<Item> getItems() {
         return items;
     }
+    public void removeItem(Item item){
+        this.items.remove(item);
+    }
 
 
 }
