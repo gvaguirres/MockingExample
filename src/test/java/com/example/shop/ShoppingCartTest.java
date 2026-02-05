@@ -31,4 +31,19 @@ class ShoppingCartTest {
 
         assertThat(cart.getItems()).hasSize(1);
     }
+
+    @Test
+    @DisplayName("Should calculate the total price of the shopping cart")
+    void getTotalPriceOfShoppingCart(){
+        ShoppingCart cart = new ShoppingCart();
+        Item shirt = new Item("1", 100.0, 2);
+        Item pants = new Item("2", 200.0, 1);
+        Item hat  = new Item("3", 300.0, 2);
+
+        cart.addItem(shirt);
+        cart.addItem(pants);
+        cart.addItem(hat);
+
+        assertThat(cart.getTotalPrice()).isEqualTo(1000.0);
+    }
 }
