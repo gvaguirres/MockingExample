@@ -46,4 +46,20 @@ class ShoppingCartTest {
 
         assertThat(cart.getTotalPrice()).isEqualTo(1000.0);
     }
+
+    @Test
+    @DisplayName("Should apply discount to the shopping cart")
+    void applyDiscountToShoppingCart(){
+        ShoppingCart cart = new ShoppingCart();
+        Item shirt = new Item("1", 100.0, 1);
+        Item pants = new Item("2", 200.0, 1);
+        Discount discount = new Discount(50);
+
+        cart.addItem(shirt);
+        cart.addItem(pants);
+        cart.setDiscount(discount);
+
+        assertThat(cart.getTotalPrice()).isEqualTo(150);
+
+    }
 }
