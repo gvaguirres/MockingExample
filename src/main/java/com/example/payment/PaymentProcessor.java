@@ -1,7 +1,5 @@
 package com.example.payment;
 
-import java.sql.SQLException;
-
 public class PaymentProcessor {
     private static final String API_KEY = "sk_test_123456";
     private final DatabaseConnection databaseConnection;
@@ -14,13 +12,13 @@ public class PaymentProcessor {
         this.paymentApi = paymentApi;
     }
 
-    public boolean processPayment(double amount) throws SQLException {
+    public boolean processPayment(double amount) {
         // Anropar extern betaltjänst direkt med statisk API-nyckel
-        PaymentApiResponse response = paymentApi.charge(API_KEY, amount);
+        PaymentApiResponse response = this.paymentApi.charge(API_KEY, amount);
 
         // Skriver till databas direkt
         if (response.success()) {
-            databaseConnection.getInstance()
+            this.databaseConnection
                     .executeUpdate("INSERT INTO payments (amount, status) VALUES (" + amount + ", 'SUCCESS')");
         }
 
