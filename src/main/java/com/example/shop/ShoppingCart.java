@@ -10,20 +10,23 @@ public class ShoppingCart {
 
     public void addItem(Item newItem){
 
-        for(Item existingItem : items){
-            if (existingItem.getId().equals(newItem.getId())) {
-                int updatedQuantity = existingItem.getQuantity() + newItem.getQuantity();
-                existingItem.setQuantity(updatedQuantity);
+        if ( newItem.getQuantity() > 0) {
+            for (Item existingItem : items) {
+                if (existingItem.getId().equals(newItem.getId())) {
+                    int updatedQuantity = existingItem.getQuantity() + newItem.getQuantity();
+                    existingItem.setQuantity(updatedQuantity);
 
-                return;
+                    return;
+                }
             }
+            this.items.add(newItem);
         }
-
-        this.items.add(newItem);
     }
+
     public List<Item> getItems() {
         return items;
     }
+
     public void removeItem(Item item){
         this.items.remove(item);
     }
@@ -37,7 +40,7 @@ public class ShoppingCart {
                 .mapToDouble(item -> item.getPrice() * item.getQuantity())
                 .sum();
 
-        if (discount != null) {
+        if (discount != null && discount.getPercentage() <= 100 && discount.getPercentage() > 0) {
             return discount.applyDiscount(totalPrice);
         }
 
